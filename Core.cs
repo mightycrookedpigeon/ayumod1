@@ -1,7 +1,5 @@
-﻿using System.Reflection;
-using HarmonyLib;
+﻿using HarmonyLib;
 using MelonLoader;
-using UnityEngine;
 
 [assembly: MelonInfo(typeof(ayumod1.Core), "ayumod1", "1.0.0", "user", null)]
 [assembly: MelonGame("semiwork", "REPO")]
@@ -11,16 +9,16 @@ namespace ayumod1
     public class Core : MelonMod
     {
         // Patch the amount of health the local player gets when they are healed by the truck
-        [HarmonyPatch(typeof(PlayerAvatar), "FinalHealRPC")]
-        private static class FinalHealRPCPatch
-        {
-            private static void Prefix(PlayerAvatar __instance)
-            {
-                MelonLogger.Msg("FinalHealRPC called.");
-                // Heal the player for their maxHealth amount
-                __instance.playerHealth.Heal(1000, true);
-            }
-        }
+        //[HarmonyPatch(typeof(PlayerAvatar), "FinalHealRPC")]
+        //private static class FinalHealRPCPatch
+        //{
+        //    private static void Prefix(PlayerAvatar __instance)
+        //    {
+        //        MelonLogger.Msg("FinalHealRPC called.");
+        //        // Heal the player for their maxHealth amount
+        //        __instance.playerHealth.Heal(1000, true);
+        //    }
+        //}
 
         public override void OnInitializeMelon()
         {
@@ -77,5 +75,39 @@ namespace ayumod1
                 _leaveGame = false;
             }
         }
+
+        [HarmonyPatch(typeof(RunManager), "UpdateLevel")]
+        private static class UpdateLevelPatch
+        {
+            static void Prefix(string _levelName, int _levelsCompleted, bool _gameOver)
+            {
+                SemiFunc.OnSceneSwitch(_gameOver, false);
+            }
+        }
+
+        [HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.DebugDev))]
+        private static class DebugDevPatch
+        {
+            static bool Postfix(bool devMode) => true;
+        }
+
+        [HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.Command))]
+        private static class CommandPatch
+        {
+            static void Prefix(string _command)
+            {
+                if (_command == "/tester")
+                {
+                    RunManager.instance.TesterToggle();
+                    return;
+                }
+                else if (_command == "/shop")
+                {
+                    RunManager.instance.ChangeLevel(true, false, RunManager.ChangeLevelType.Shop);
+                }
+            }
+        }
+
+        
     }
 }
