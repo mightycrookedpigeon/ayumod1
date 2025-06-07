@@ -1,24 +1,24 @@
 ﻿using HarmonyLib;
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(ayumod1.Core), "ayumod1", "1.0.0", "user", null)]
+[assembly: MelonInfo(typeof(ayumod1.Core), "ayumod1", "1.0.1", "arinalee", null)]
 [assembly: MelonGame("semiwork", "REPO")]
 
 namespace ayumod1
 {
     public class Core : MelonMod
     {
-        // Patch the amount of health the local player gets when they are healed by the truck
-        //[HarmonyPatch(typeof(PlayerAvatar), "FinalHealRPC")]
-        //private static class FinalHealRPCPatch
-        //{
-        //    private static void Prefix(PlayerAvatar __instance)
-        //    {
-        //        MelonLogger.Msg("FinalHealRPC called.");
-        //        // Heal the player for their maxHealth amount
-        //        __instance.playerHealth.Heal(1000, true);
-        //    }
-        //}
+        // Local player gets fully healed by the truck
+       [HarmonyPatch(typeof(PlayerAvatar), "FinalHealRPC")]
+        private static class FinalHealRPCPatch
+        {
+            private static void Prefix(PlayerAvatar __instance)
+            {
+                MelonLogger.Msg("FinalHealRPC called.");
+                // Heal the player for their maxHealth amount
+                __instance.playerHealth.Heal(1000, true);
+            }
+        }
 
         public override void OnInitializeMelon()
         {
@@ -53,7 +53,7 @@ namespace ayumod1
         //    }
         //}
 
-
+        // Make all the batteries in the game infinite
         [HarmonyPatch(typeof(ItemBattery), "FixedUpdate")]
         private static class ItemBatteryPatch
         {
@@ -67,6 +67,7 @@ namespace ayumod1
             }
         }
 
+        // Disable save deletion if you leave mid game
         [HarmonyPatch(typeof(DataDirector), "SaveDeleteCheck")]
         private static class SaveDeleteOnLeavePatch
         {
@@ -76,38 +77,39 @@ namespace ayumod1
             }
         }
 
-        [HarmonyPatch(typeof(RunManager), "UpdateLevel")]
-        private static class UpdateLevelPatch
+        // Enable dev mode
+        //[HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.DebugDev))]
+        //private static class DebugDevPatch
+        //{
+        //    static bool Postfix(bool devMode) => true;
+        //}
+
+        //[HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.Command))]
+        //private static class CommandPatch
+        //{
+        //    static void Prefix(string _command)
+        //    {
+        //        if (_command == "/tester")
+        //        {
+        //            RunManager.instance.TesterToggle();
+        //            return;
+        //        }
+        //        else if (_command == "/shop")
+        //        {
+        //            RunManager.instance.ChangeLevel(true, false, RunManager.ChangeLevelType.Shop);
+        //        }
+        //    }
+        //}
+
+        // Backport shop healthpack exploit
+        [HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.RunIsShop))]
+        private static class RunIsShopPatch
         {
-            static void Prefix(string _levelName, int _levelsCompleted, bool _gameOver)
+            static bool Prefix()
             {
-                SemiFunc.OnSceneSwitch(_gameOver, false);
+                return (UnityEngine.Object)RunManager.instance.levelCurrent == (UnityEngine.Object)RunManager.instance.levelShop;
             }
         }
 
-        [HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.DebugDev))]
-        private static class DebugDevPatch
-        {
-            static bool Postfix(bool devMode) => true;
-        }
-
-        [HarmonyPatch(typeof(SemiFunc), nameof(SemiFunc.Command))]
-        private static class CommandPatch
-        {
-            static void Prefix(string _command)
-            {
-                if (_command == "/tester")
-                {
-                    RunManager.instance.TesterToggle();
-                    return;
-                }
-                else if (_command == "/shop")
-                {
-                    RunManager.instance.ChangeLevel(true, false, RunManager.ChangeLevelType.Shop);
-                }
-            }
-        }
-
-        
     }
 }
